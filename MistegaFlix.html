@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mistega Flix - Il tuo Cinema</title>
+    <link rel="apple-touch-icon" href="https://files.catbox.moe/u0f6f4.png">
+    <link rel="icon" href="https://files.catbox.moe/u0f6f4.png">
+    <style>
+        /* --- STILE GLOBALE --- */
+        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #111; color: white; margin: 0; padding: 0; overflow-x: hidden; }
+
+        /* Navbar */
+        .navbar { padding: 15px 4%; display: flex; align-items: center; background: linear-gradient(to bottom, rgba(0,0,0,0.8) 10%, transparent); position: fixed; top: 0; width: 100%; z-index: 1000; transition: background 0.3s; }
+        .logo-container { display: flex; align-items: center; gap: 10px; cursor: pointer; margin-right: 30px; }
+        .logo-m { font-size: 35px; font-weight: bold; color: #ff4d4d; text-shadow: 0 0 10px #ff0000; font-style: italic; }
+        .logo-text { font-size: 22px; font-weight: bold; color: #e50914; letter-spacing: -1px; text-transform: uppercase; }
+
+        /* Menù a Tendina (Dropdown) */
+        .nav-links { display: flex; gap: 20px; align-items: center; }
+        .dropdown { position: relative; display: inline-block; }
+        .dropbtn { background: transparent; color: #ddd; border: none; font-size: 16px; font-weight: bold; cursor: pointer; padding: 10px; transition: color 0.3s; }
+        .dropbtn:hover { color: white; }
+        .dropdown-content { display: none; position: absolute; background-color: rgba(0,0,0,0.9); min-width: 200px; box-shadow: 0px 8px 16px rgba(0,0,0,0.5); border: 1px solid #333; z-index: 1; border-radius: 4px; }
+        .dropdown-content a { color: white; padding: 12px 16px; text-decoration: none; display: block; font-size: 14px; transition: background 0.2s; }
+        .dropdown-content a:hover { background-color: #e50914; }
+        .dropdown:hover .dropdown-content { display: block; }
+
+        /* Ricerca nella Navbar */
+        .search-container { margin-left: auto; display: flex; gap: 8px; }
+        .search-container input { background: rgba(0,0,0,0.6); border: 1px solid #555; color: white; padding: 10px; border-radius: 4px; outline: none; width: 250px; }
+        .search-btn { background:#e50914; color:white; border:none; padding:8px 15px; border-radius:4px; cursor:pointer; font-weight:bold; }
+
+        /* Hero Section */
+        .hero { height: 75vh; background-size: cover; background-position: center; display: flex; flex-direction: column; justify-content: center; padding: 0 4%; position: relative; }
+        .hero::after { content: ""; position: absolute; bottom: 0; left: 0; width: 100%; height: 150px; background: linear-gradient(to top, #111, transparent); }
+        .hero-content { max-width: 600px; z-index: 1; }
+        .hero-title { font-size: 3.5rem; margin-bottom: 10px; text-shadow: 2px 2px 10px black; }
+        .hero-desc { font-size: 1.1rem; margin-bottom: 20px; color: #eee; text-shadow: 1px 1px 5px black; }
+
+        /* Bottoni Generali */
+        .play-btn { padding: 12px 28px; font-size:16px; font-weight:bold; cursor:pointer; border:none; border-radius:4px; background: white; color: black; display: inline-flex; align-items: center; gap: 10px; transition: 0.2s; }
+        .play-btn:hover { background: #ccc; transform: scale(1.05); }
+
+        /* Slider Righe (con le frecce) */
+        .row { margin: 25px 0 25px 4%; position: relative; }
+        .row-title { font-size: 1.4rem; margin-bottom: 10px; font-weight: bold; }
+        .slider-wrapper { position: relative; display: flex; align-items: center; }
+        .movies-slider { display: flex; overflow-x: scroll; overflow-y: hidden; gap: 12px; padding: 15px 0; scrollbar-width: none; scroll-behavior: smooth; width: 100%; }
+        .movies-slider::-webkit-scrollbar { display: none; }
+        
+        /* Frecce di Scorrimento */
+        .scroll-btn { position: absolute; z-index: 10; background: rgba(0,0,0,0.5); color: white; border: none; font-size: 30px; cursor: pointer; height: 100%; padding: 0 15px; transition: 0.3s; }
+        .scroll-btn:hover { background: rgba(0,0,0,0.8); font-size: 35px; }
+        .scroll-btn.left { left: 0; border-top-right-radius: 5px; border-bottom-right-radius: 5px; }
+        .scroll-btn.right { right: 0; border-top-left-radius: 5px; border-bottom-left-radius: 5px; }
+
+        /* Card Film */
+        .movie-card { min-width: 170px; max-width: 170px; transition: 0.3s; cursor: pointer; position: relative; }
+        .movie-card:hover { transform: scale(1.1); z-index: 5; }
+        .movie-card img { width: 100%; border-radius: 5px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        .badge { position: absolute; top: 8px; right: 8px; background: #e50914; color: white; font-size: 10px; padding: 3px 6px; border-radius: 3px; font-weight: bold; }
+
+        /* Griglia a schermo intero */
+        #grid-container { display: none; padding: 100px 4% 50px 4%; min-height: 100vh; }
+        #grid-title { font-size: 2rem; margin-bottom: 20px; border-left: 5px solid #e50914; padding-left: 10px; }
+        #grid-results { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 20px; }
+
+        /* Overlay Dettagli */
+        #details-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #111; z-index: 1500; display: none; overflow-y: auto; }
+        .details-bg { width: 100%; height: 65vh; background-size: cover; background-position: top center; position: relative; }
+        .details-bg::after { content: ''; position: absolute; bottom: 0; width: 100%; height: 200px; background: linear-gradient(to top, #111, transparent); }
+        .details-content { padding: 0 4%; display: flex; gap: 40px; margin-top: -180px; position: relative; z-index: 2; flex-wrap: wrap; }
+        .details-poster { width: 280px; border-radius: 10px; box-shadow: 0 0 40px black; }
+        .details-info { flex: 1; min-width: 300px; }
+        .details-title { font-size: 3.5rem; margin-bottom: 15px; }
+        .details-overview { font-size: 1.2rem; line-height: 1.5; color: #ccc; margin-bottom: 30px; }
+        .close-details-btn { position: absolute; top: 20px; right: 40px; font-size: 50px; cursor: pointer; color: white; z-index: 20; }
+
+        /* Menù Ricerca ITA */
+        .ita-search-box { background: #222; padding: 20px; border-radius: 10px; display: flex; flex-direction: column; gap: 15px; max-width: 500px; border: 1px solid #333; }
+        .ita-row { display: flex; gap: 10px; align-items: center; }
+        select { padding: 10px; background: #000; color: white; border: 1px solid #e50914; border-radius: 5px; font-size: 15px; cursor: pointer; flex: 1; outline: none; }
+
+        /* Player Video */
+        #player-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 2000; display: none; flex-direction: column; align-items: center; justify-content: center; }
+        iframe { width: 90%; height: 80%; border: none; border-radius: 10px; background: #000; }
+        .close-player-btn { position: absolute; top: 20px; right: 40px; font-size: 40px; cursor: pointer; color: white; }
+        .tv-controls { display: none; margin-bottom: 15px; gap: 15px; align-items: center; background: #1a1a1a; padding: 10px 25px; border-radius: 50px; border: 1px solid #444; }
+        .tv-controls input { width: 50px; background: transparent; border: 1px solid #e50914; color: white; text-align: center; padding: 5px; border-radius: 5px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar" id="nav">
+        <div class="logo-container" onclick="tornaAllaHome()">
+            <div class="logo-m">M</div>
+            <div class="logo-text">ISTEGA FLIX</div>
+        </div>
+        
+        <div class="nav-links">
+            <div class="dropdown">
+                <button class="dropbtn">Film ▼</button>
+                <div class="dropdown-content">
+                    <a href="#" onclick="apriCategoriaSpeciale('romcom2000')" style="background: #e50914; font-weight: bold;">Romcom & Anni 2000</a>
+                    <a href="#" onclick="apriCategoriaSpeciale('stupidi')" style="background: #b81d24; font-weight: bold;">Commedie Demenziali USA</a>
+                    <a href="#" onclick="apriCategoriaSpeciale('ita_stupidi')" style="background: #009246; font-weight: bold;">Commedie Italiane Demenziali</a>
+                    <a href="#" onclick="apriCategoriaSpeciale('ita_chill')" style="background: #ce2b37; font-weight: bold;">Commedie Italiane & Chill</a>
+                    <a href="#" onclick="apriCategoriaSpeciale('marvel')" style="background: #6a040f; font-weight: bold;">Universo Marvel (Cronologico)</a>
+                    <a href="#" onclick="apriGriglia('movie', 28, 'Azione')">Azione & Avventura</a>
+                    <a href="#" onclick="apriGriglia('movie', 35, 'Commedia')">Commedia (Generale)</a>
+                    <a href="#" onclick="apriGriglia('movie', 27, 'Horror')">Horror</a>
+                    <a href="#" onclick="apriGriglia('movie', 10749, 'Romantico')">Romantico</a>
+                    <a href="#" onclick="apriGriglia('movie', 878, 'Fantascienza')">Fantascienza</a>
+                    <a href="#" onclick="apriGriglia('movie', 53, 'Thriller')">Thriller</a>
+                    <a href="#" onclick="apriGriglia('movie', 16, 'Animazione')">Animazione</a>
+                </div>
+            </div>
+            <div class="dropdown">
+                <button class="dropbtn">Serie TV ▼</button>
+                <div class="dropdown-content">
+                    <a href="#" onclick="apriCategoriaSpeciale('tv_shows_reality')" style="background: #e50914; font-weight: bold;">Show TV, Reality & Fiction</a>
+                    <a href="#" onclick="apriGriglia('tv', 10759, 'Azione & Avventura')">Azione & Avventura</a>
+                    <a href="#" onclick="apriGriglia('tv', 35, 'Commedia')">Commedia</a>
+                    <a href="#" onclick="apriGriglia('tv', 18, 'Drammatico')">Drammatico</a>
+                    <a href="#" onclick="apriGriglia('tv', 9648, 'Mistero')">Mistero / Crime</a>
+                    <a href="#" onclick="apriGriglia('tv', 10765, 'Sci-Fi & Fantasy')">Sci-Fi & Fantasy</a>
+                    <a href="#" onclick="apriGriglia('tv', 16, 'Animazione')">Animazione</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="search-container">
+            <input type="text" id="searchInput" placeholder="Cerca film o serie TV...">
+            <button class="search-btn" onclick="cercaMedia()">Cerca</button>
+        </div>
+    </nav>
+
+    <div id="home-view">
+        <header class="hero" id="hero">
+            <div class="hero-content">
+                <h1 class="hero-title" id="hero-title">Caricamento...</h1>
+                <p class="hero-desc" id="hero-desc"></p>
+                <button class="play-btn" onclick="apriDettagliHero()">▶ Più Info</button>
+            </div>
+        </header>
+
+        <div id="content">
+            <div class="row">
+                <div class="row-title">Film Popolari</div>
+                <div class="slider-wrapper">
+                    <button class="scroll-btn left" onclick="scorriLaterale('popolari', -700)">❮</button>
+                    <div class="movies-slider" id="popolari"></div>
+                    <button class="scroll-btn right" onclick="scorriLaterale('popolari', 700)">❯</button>
+                </div>
+            </div>
+            <div class="row">
+                <div class="row-title">Serie TV del Momento</div>
+                <div class="slider-wrapper">
+                    <button class="scroll-btn left" onclick="scorriLaterale('tv-popolari', -700)">❮</button>
+                    <div class="movies-slider" id="tv-popolari"></div>
+                    <button class="scroll-btn right" onclick="scorriLaterale('tv-popolari', 700)">❯</button>
+                </div>
+            </div>
+            <div class="row">
+                <div class="row-title">Nuove Uscite</div>
+                <div class="slider-wrapper">
+                    <button class="scroll-btn left" onclick="scorriLaterale('nuove-uscite', -700)">❮</button>
+                    <div class="movies-slider" id="nuove-uscite"></div>
+                    <button class="scroll-btn right" onclick="scorriLaterale('nuove-uscite', 700)">❯</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="grid-container">
+        <h2 id="grid-title">Risultati</h2>
+        <div id="grid-results"></div>
+        <div style="text-align: center; margin-top: 40px;">
+            <button id="load-more-btn" class="play-btn" style="background:#e50914; color:white; border:none; display:none;" onclick="caricaAltri()">Carica Altri ▼</button>
+        </div>
+    </div>
+
+    <div id="details-overlay">
+        <span class="close-details-btn" onclick="chiudiDettagli()">&times;</span>
+        <div class="details-bg" id="details-bg"></div>
+        <div class="details-content">
+            <img class="details-poster" id="details-poster" src="" alt="Poster">
+            <div class="details-info">
+                <h1 class="details-title" id="details-title">Titolo</h1>
+                <p class="details-overview" id="details-overview">Trama</p>
+                <div class="ita-search-box">
+                    <button class="play-btn" style="background: white; color: black;" onclick="avviaRiproduzione()">▶ Guarda Qui (Lingua Originale)</button>
+                    <div class="ita-row">
+                        <select id="scelta-sito">
+                        <option value="streamingcommunity">StreamingCommunity</option>
+                        <option value="cb01">CB01</option>
+                        <option value="guardaflix">GuardaFlix</option>
+                        </select>
+                        <button class="play-btn" style="background:#e50914; color:white; border:none;" onclick="cercaSuSitoEsterno()">🔎 Cerca ITA</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="player-overlay">
+        <span class="close-player-btn" onclick="chiudiPlayer()">&times;</span>
+        <div class="tv-controls" id="tv-controls">
+            <label>Stagione: <input type="number" id="season" value="1" min="1"></label>
+            <label>Episodio: <input type="number" id="episode" value="1" min="1"></label>
+            <button class="search-btn" onclick="aggiornaPlayer()">Vai</button>
+        </div>
+        <iframe id="mainPlayer" allowfullscreen></iframe>
+    </div>
+
+    <script>
+        // --- INSERISCI QUI LA TUA CHIAVE E IL LINK ---
+        const API_KEY = '07f175951dd52a3251f5039096c54a72'; 
+        const URL_RUBRICA = 'https://gist.githubusercontent.com/mistega2/c679128c8dacef8431fe1c877cbf2d25/raw/ec54ece83edc3b7de573cf398fda4a81804c2d53/config.json'; 
+        
+        const BASE_URL = 'https://api.themoviedb.org/3';
+        const IMG_URL = 'https://image.tmdb.org/t/p/original';
+        let currentItem = null;
+        let dominiStreaming = {};
+        
+        let statoGriglia = { contesto: '', tipoMedia: '', ricerca: '', paginaAttuale: 1, urlBase: '' };
+
+        window.onload = async () => {
+            await caricaDomini();
+            caricaVetrina();
+            window.addEventListener('scroll', () => {
+                const nav = document.getElementById('nav');
+                if (window.scrollY > 50) nav.style.background = "#111";
+                else nav.style.background = "linear-gradient(to bottom, rgba(0,0,0,0.8) 10%, transparent)";
+            });
+        };
+
+        async function caricaDomini() {
+            const dominiDiBase = {
+                "streamingcommunity": "https://streamingcommunityz.organic",
+                "cb01": "https://cb01uno.run",
+                "guardaflix": "https://guardaplay.live"
+            };
+            try {
+                const res = await fetch(URL_RUBRICA);
+                const datiOnline = await res.json();
+                dominiStreaming = { ...dominiDiBase, ...datiOnline };
+            } catch (e) {
+                dominiStreaming = dominiDiBase;
+            }
+        }
+
+        async function caricaVetrina() {
+            const resPop = await fetch(`${BASE_URL}/movie/popular?api_key=${API_KEY}&language=it-IT`).then(r => r.json());
+            impostaHero(resPop.results[0]);
+            popolaRiga('popolari', resPop.results, 'movie');
+            const resTv = await fetch(`${BASE_URL}/tv/popular?api_key=${API_KEY}&language=it-IT`).then(r => r.json());
+            popolaRiga('tv-popolari', resTv.results, 'tv');
+            const resNew = await fetch(`${BASE_URL}/movie/now_playing?api_key=${API_KEY}&language=it-IT`).then(r => r.json());
+            popolaRiga('nuove-uscite', resNew.results, 'movie');
+        }
+
+        function impostaHero(movie) {
+            const hero = document.getElementById('hero');
+            hero.style.backgroundImage = `url(${IMG_URL + movie.backdrop_path})`;
+            document.getElementById('hero-title').innerText = movie.title;
+            document.getElementById('hero-desc').innerText = movie.overview.substring(0, 180) + "...";
+            window.heroMovie = movie;
+        }
+
+        function apriDettagliHero() { apriDettagli(window.heroMovie, 'movie'); }
+
+        function popolaRiga(id, items, type) {
+            const slider = document.getElementById(id);
+            slider.innerHTML = '';
+            items.forEach(item => {
+                if (item.poster_path) slider.appendChild(createCard(item, type));
+            });
+        }
+
+        function scorriLaterale(idSlider, quantitaPixel) {
+            const slider = document.getElementById(idSlider);
+            slider.scrollBy({ left: quantitaPixel, behavior: 'smooth' });
+        }
+
+        function tornaAllaHome() {
+            document.getElementById('home-view').style.display = 'block';
+            document.getElementById('grid-container').style.display = 'none';
+            document.getElementById('searchInput').value = ""; 
+            window.scrollTo(0,0);
+        }
+
+        // --- MOTORE DELLE CATEGORIE SPECIALI ---
+        async function apriCategoriaSpeciale(idSpeciale) {
+            document.getElementById('home-view').style.display = 'none';
+            document.getElementById('grid-container').style.display = 'block';
+            document.getElementById('load-more-btn').style.display = 'none';
+            
+            const grid = document.getElementById('grid-results');
+            grid.innerHTML = '<h3 style="color:white; grid-column: 1/-1;">Caricamento Collezione...</h3>';
+
+            let urlBase = '';
+            let tipoMedia = 'movie'; // Default: stiamo cercando film, tranne per l'ultima categoria
+
+            if (idSpeciale === 'romcom2000') {
+                document.getElementById('grid-title').innerText = "Romcom & Vibes Anni 90-2000";
+                urlBase = `${BASE_URL}/discover/movie?api_key=${API_KEY}&language=it-IT&with_genres=35,10749&primary_release_date.gte=1990-01-01&primary_release_date.lte=2014-12-31&sort_by=popularity.desc`;
+            
+            } else if (idSpeciale === 'stupidi') {
+                document.getElementById('grid-title').innerText = "Commedie Demenziali & Teen USA";
+                urlBase = `${BASE_URL}/discover/movie?api_key=${API_KEY}&language=it-IT&with_genres=35&with_origin_country=US&certification_country=US&certification=R&sort_by=popularity.desc`;
+            
+            } else if (idSpeciale === 'marvel') {
+                document.getElementById('grid-title').innerText = "Universo Marvel (Ordine Cronologico)";
+                urlBase = `${BASE_URL}/discover/movie?api_key=${API_KEY}&language=it-IT&with_companies=420&sort_by=primary_release_date.asc`;
+            
+            } else if (idSpeciale === 'ita_stupidi') {
+                document.getElementById('grid-title').innerText = "Commedie Demenziali Italiane";
+                // 35(Commedia) dall'Italia, togliamo 18(Drammatico) e 10749(Romantico)
+                urlBase = `${BASE_URL}/discover/movie?api_key=${API_KEY}&language=it-IT&with_genres=35&without_genres=18,10749&with_origin_country=IT&sort_by=popularity.desc`;
+            
+            } else if (idSpeciale === 'ita_chill') {
+                document.getElementById('grid-title').innerText = "Commedie & Romcom Italiane (Chill)";
+                // 35(Commedia) e 10749(Romantico) dall'Italia
+                urlBase = `${BASE_URL}/discover/movie?api_key=${API_KEY}&language=it-IT&with_genres=35,10749&with_origin_country=IT&sort_by=popularity.desc`;
+            
+            } else if (idSpeciale === 'tv_shows_reality') {
+                document.getElementById('grid-title').innerText = "Show TV, Reality & Fiction";
+                tipoMedia = 'tv'; // <-- Molto importante: qui diciamo che sono Serie TV!
+                // 10764(Reality) OPPURE 10751(Family) OPPURE 10766(Soap) OPPURE 10767(Talk)
+                urlBase = `${BASE_URL}/discover/tv?api_key=${API_KEY}&language=it-IT&with_genres=10764|10751|10766|10767&sort_by=popularity.desc`;
+            }
+
+            // Salviamo la configurazione nel "cervello" per il tasto Carica Altri
+            statoGriglia = { contesto: 'speciale', tipoMedia: tipoMedia, ricerca: idSpeciale, paginaAttuale: 2, urlBase: urlBase };
+
+            const res = await fetch(`${urlBase}&page=1`).then(r => r.json());
+            grid.innerHTML = '';
+            res.results.forEach(item => {
+                if (item.poster_path) grid.appendChild(createCard(item, tipoMedia));
+            });
+            
+            if(res.total_pages >= 2) document.getElementById('load-more-btn').style.display = 'inline-block';
+            window.scrollTo(0,0);
+        }
+
+        async function apriGriglia(tipo, idGenere, nomeGenere) {
+            document.getElementById('home-view').style.display = 'none';
+            document.getElementById('grid-container').style.display = 'block';
+            document.getElementById('load-more-btn').style.display = 'none';
+            const grid = document.getElementById('grid-results');
+            grid.innerHTML = '<h3 style="color:white; grid-column: 1/-1;">Caricamento in corso...</h3>';
+            
+            document.getElementById('grid-title').innerText = `${tipo === 'movie' ? 'Film' : 'Serie TV'} - ${nomeGenere}`;
+            statoGriglia = { contesto: 'genere', tipoMedia: tipo, ricerca: idGenere, paginaAttuale: 2 };
+
+            const url = `${BASE_URL}/discover/${tipo}?api_key=${API_KEY}&language=it-IT&with_genres=${idGenere}&sort_by=popularity.desc`;
+            const res = await fetch(`${url}&page=1`).then(r => r.json());
+            
+            grid.innerHTML = '';
+            res.results.forEach(item => {
+                if (item.poster_path) grid.appendChild(createCard(item, tipo));
+            });
+            if(res.total_pages >= 2) document.getElementById('load-more-btn').style.display = 'inline-block';
+            window.scrollTo(0,0);
+        }
+
+        async function cercaMedia() {
+            const q = document.getElementById('searchInput').value;
+            if(!q) return;
+            document.getElementById('home-view').style.display = 'none';
+            document.getElementById('grid-container').style.display = 'block';
+            document.getElementById('load-more-btn').style.display = 'none';
+            document.getElementById('grid-title').innerText = `Risultati per: "${q}"`;
+            const grid = document.getElementById('grid-results');
+            grid.innerHTML = '';
+            statoGriglia = { contesto: 'ricerca', tipoMedia: 'multi', ricerca: q, paginaAttuale: 2 };
+            
+            const res = await fetch(`${BASE_URL}/search/multi?api_key=${API_KEY}&language=it-IT&query=${encodeURIComponent(q)}&page=1`).then(r => r.json());
+            res.results.forEach(item => {
+                if (item.poster_path) grid.appendChild(createCard(item, item.media_type || 'movie'));
+            });
+            if(res.total_pages >= 2) document.getElementById('load-more-btn').style.display = 'inline-block';
+            window.scrollTo(0,0);
+        }
+
+        async function caricaAltri() {
+            const btn = document.getElementById('load-more-btn');
+            btn.innerText = "Caricamento...";
+            let url = "";
+            
+            if (statoGriglia.contesto === 'speciale') {
+                url = `${statoGriglia.urlBase}&page=${statoGriglia.paginaAttuale}`;
+            } else if (statoGriglia.contesto === 'genere') {
+                url = `${BASE_URL}/discover/${statoGriglia.tipoMedia}?api_key=${API_KEY}&language=it-IT&with_genres=${statoGriglia.ricerca}&sort_by=popularity.desc&page=${statoGriglia.paginaAttuale}`;
+            } else {
+                url = `${BASE_URL}/search/multi?api_key=${API_KEY}&language=it-IT&query=${encodeURIComponent(statoGriglia.ricerca)}&page=${statoGriglia.paginaAttuale}`;
+            }
+
+            const res = await fetch(url).then(r => r.json());
+            const grid = document.getElementById('grid-results');
+            res.results.forEach(item => {
+                if (item.poster_path) grid.appendChild(createCard(item, item.media_type || statoGriglia.tipoMedia));
+            });
+            statoGriglia.paginaAttuale++;
+            btn.innerText = "Carica Altri ▼";
+            if (statoGriglia.paginaAttuale > res.total_pages) btn.style.display = 'none';
+        }
+
+        function createCard(item, type) {
+            const card = document.createElement('div');
+            card.className = 'movie-card';
+            card.onclick = () => apriDettagli(item, item.media_type || type);
+            card.innerHTML = `<img src="https://image.tmdb.org/t/p/w300${item.poster_path}">${(item.media_type || type) === 'tv' ? '<div class="badge">SERIE TV</div>' : ''}`;
+            return card;
+        }
+
+        function apriDettagli(item, type) {
+            currentItem = item;
+            currentItem.media_type = type;
+            document.getElementById('details-overlay').style.display = 'block';
+            document.getElementById('details-bg').style.backgroundImage = `url(${IMG_URL + item.backdrop_path})`;
+            document.getElementById('details-poster').src = `https://image.tmdb.org/t/p/w500${item.poster_path}`;
+            document.getElementById('details-title').innerText = item.title || item.name;
+            document.getElementById('details-overview').innerText = item.overview || "Trama non disponibile.";
+            document.body.style.overflow = 'hidden';
+        }
+
+        function chiudiDettagli() { document.getElementById('details-overlay').style.display = 'none'; document.body.style.overflow = 'auto'; }
+
+        function avviaRiproduzione() {
+            document.getElementById('details-overlay').style.display = 'none';
+            document.getElementById('player-overlay').style.display = 'flex';
+            if (currentItem.media_type === 'tv') document.getElementById('tv-controls').style.display = 'flex';
+            else document.getElementById('tv-controls').style.display = 'none';
+            aggiornaPlayer();
+        }
+
+        function aggiornaPlayer() {
+            const iframe = document.getElementById('mainPlayer');
+            const s = document.getElementById('season').value || 1;
+            const e = document.getElementById('episode').value || 1;
+            const dominioPlayer = "https://vidsrc.net"; 
+            if (currentItem.media_type === 'movie') iframe.src = `${dominioPlayer}/embed/movie/${currentItem.id}`;
+            else iframe.src = `${dominioPlayer}/embed/tv/${currentItem.id}/${s}/${e}`;
+        }
+
+        function chiudiPlayer() { document.getElementById('player-overlay').style.display = 'none'; document.getElementById('mainPlayer').src = ''; document.getElementById('details-overlay').style.display = 'block'; }
+
+        function cercaSuSitoEsterno() {
+            const sito = document.getElementById('scelta-sito').value;
+            const dominio = dominiStreaming[sito];
+            if (!dominio) return;
+            const titoloOriginale = currentItem.title || currentItem.name;
+            const titoloPiu = titoloOriginale.trim().split(' ').join('+');
+            const titoloSlug = titoloOriginale.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''); 
+            let urlFinale = "";
+            if (sito === 'streamingcommunity') urlFinale = `${dominio}/it/search?q=${encodeURIComponent(titoloOriginale)}`;
+            else if (sito === 'guardaflix') urlFinale = currentItem.media_type === 'movie' ? `${dominio}/film/${titoloSlug}/` : `${dominio}/?s=${titoloPiu}`;
+            else if (sito === 'cb01') urlFinale = `${dominio}/?s=${titoloPiu}`;
+            window.open(urlFinale, '_blank');
+        }
+    </script>
+</body>
+</html>
